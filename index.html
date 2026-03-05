@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horse Wagers</title>
+
+<style>
+
+body{
+font-family: Arial;
+margin:15px;
+background:#f4f4f4;
+}
+
+h2{
+margin-bottom:10px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+background:white;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #ddd;
+}
+
+th{
+background:#eee;
+}
+
+select{
+padding:6px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Wager Dashboard</h2>
+
+<table id="table">
+
+<thead>
+<tr id="headerRow"></tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<script>
+
+const sheetURL =
+"https://docs.google.com/spreadsheets/d/1rEU82uodMm3MbUmbgBGJQrAnsKJwD86A2gPVtMzhOdU/export?format=csv";
+
+async function loadData(){
+
+const response = await fetch(sheetURL);
+const text = await response.text();
+
+const rows = text.trim().split("\n");
+const headers = rows[0].split(",");
+
+const headerRow = document.getElementById("headerRow");
+
+headers.forEach(h=>{
+const th=document.createElement("th");
+th.innerText=h;
+headerRow.appendChild(th);
+});
+
+const tbody=document.querySelector("#table tbody");
+
+rows.slice(1).forEach(r=>{
+
+const cols=r.split(",");
+const tr=document.createElement("tr");
+
+cols.forEach(c=>{
+const td=document.createElement("td");
+td.innerText=c;
+tr.appendChild(td);
+});
+
+tbody.appendChild(tr);
+
+});
+
+}
+
+loadData();
+
+</script>
+
+</body>
+</html>
