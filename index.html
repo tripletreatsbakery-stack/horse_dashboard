@@ -14,7 +14,12 @@ background:#f5f5f5;
 }
 
 h2{
-margin-bottom:20px;
+margin-bottom:10px;
+}
+
+select{
+padding:6px;
+margin-bottom:15px;
 }
 
 table{
@@ -33,6 +38,10 @@ th{
 background:#eee;
 }
 
+.wager-group label{
+margin-right:10px;
+}
+
 </style>
 
 </head>
@@ -41,9 +50,17 @@ background:#eee;
 
 <h2>Wager Dashboard</h2>
 
+<label>Select Race:</label>
+<select id="raceSelector"></select>
+
 <table id="table">
 <thead>
-<tr id="header"></tr>
+<tr>
+<th>Program</th>
+<th>Horse</th>
+<th>Morning Line</th>
+<th>Wager</th>
+</tr>
 </thead>
 <tbody id="body"></tbody>
 </table>
@@ -52,7 +69,9 @@ background:#eee;
 
 const sheetURL =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFTzUi9G0XRrPHJNSAoN7y6Ik5rQe21n9QUjjU-xkBxJw1IGJJ7nIGUnSTLPJnkbUrQ2jZVGLHGfWo/pub?output=csv";
-  
+
+let data = [];
+
 async function loadSheet(){
 
 const response = await fetch(sheetURL);
@@ -61,26 +80,75 @@ const text = await response.text();
 const rows = text.trim().split("\n");
 const headers = rows[0].split(",");
 
-const headerRow = document.getElementById("header");
-
-headers.forEach(h=>{
-const th=document.createElement("th");
-th.innerText=h;
-headerRow.appendChild(th);
+data = rows.slice(1).map(r=>{
+const cols=r.split(",");
+let obj={};
+headers.forEach((h,i)=> obj[h]=cols[i]);
+return obj;
 });
 
-const body = document.getElementById("body");
+populateRaceSelector();
 
-rows.slice(1).forEach(r=>{
+}
 
-const cols = r.split(",");
+function populateRaceSelector(){
+
+const races=[...new Set(data.map(d=>d.race_id))];
+
+const selector=document.getElementById("raceSelector");
+
+races.forEach(r=>{
+const opt=document.createElement("option");
+opt.value=r;
+opt.text=r;
+selector.appendChild(opt);
+});
+
+selector.addEventListener("change", renderTable);
+
+renderTable();
+
+}
+
+function renderTable(){
+
+const race=document.getElementById("raceSelector").value;
+
+const filtered=data.filter(d=>d.race_id===race);
+
+const body=document.getElementById("body");
+
+body.innerHTML="";
+
+filtered.forEach(h=>{
+
 const tr=document.createElement("tr");
 
-cols.forEach(c=>{
-const td=document.createElement("td");
-td.innerText=c;
-tr.appendChild(td);
-});
+tr.innerHTML=`
+
+<td>${h.program_number}</td>
+<td>${h.horse_name}</td>
+<td>${h.morning_line}</td>
+
+<td class="wager-group">
+
+<label>
+<input type="radio" name="${h.race_id}_${h.program_number}" value="win">
+Win
+</label>
+
+<label>
+<input type="radio" name="${h.race_id}_${h.program_number}" value="place">
+Place
+</label>
+
+<label>
+<input type="radio" name="${h.race_id}_${h.program_number}" value="show">
+Show
+</label>
+
+</td>
+`;
 
 body.appendChild(tr);
 
