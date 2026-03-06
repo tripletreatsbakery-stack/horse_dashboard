@@ -42,6 +42,10 @@ background:#eee;
 margin-right:10px;
 }
 
+tr.selected{
+background:#90EE90 !important;
+}
+
 </style>
 
 </head>
@@ -56,10 +60,17 @@ margin-right:10px;
 <table id="table">
 <thead>
 <tr>
+<th>Wagers</th>
+<th>Race #</th>
 <th>Program</th>
-<th>Horse</th>
+<th>Horse Name</th>
 <th>Morning Line</th>
-<th>Wager</th>
+<th>Jockey Win %</th>
+<th>Avg Speed (Last 3)</th>
+<th>3 Parts Average</th>
+<th>Avg E1 (Last 3)</th>
+<th>Avg E2 (Last 3)</th>
+<th>Avg Late (Last 3)</th>
 </tr>
 </thead>
 <tbody id="body"></tbody>
@@ -83,7 +94,7 @@ const headers = rows[0].split(",");
 data = rows.slice(1).map(r=>{
 const cols=r.split(",");
 let obj={};
-headers.forEach((h,i)=> obj[h]=cols[i]);
+headers.forEach((h,i)=> obj[h.trim()]=cols[i] ? cols[i].trim() : "");
 return obj;
 });
 
@@ -125,29 +136,26 @@ filtered.forEach(h=>{
 const tr=document.createElement("tr");
 
 tr.innerHTML=`
-
 <td class="wager-group">
-
-<label><input type="checkbox" class="wager"> W</label>
-<label><input type="checkbox" class="wager"> P</label>
-<label><input type="checkbox" class="wager"> S</label>
-
-</td><tr>
-<th>Wager</th>
-<th>Program</th>
-<th>Horse</th>
-<th>Morning Line</th>
-<th>Jockey %</th>
-<th>Speed</th>
-<th>E1</th>
-<th>E2</th>
-<th>Late</th>
-</tr>
+<label><input type="checkbox" class="wager" data-type="W"> W</label>
+<label><input type="checkbox" class="wager" data-type="P"> P</label>
+<label><input type="checkbox" class="wager" data-type="S"> S</label>
+</td>
+<td>${h.race_number || ''}</td>
+<td>${h.program_num || ''}</td>
+<td>${h.horse_name || ''}</td>
+<td>${h.morning_line || ''}</td>
+<td>${h.jockey_win_pct || ''}</td>
+<td>${h.avg_speed_last3 || ''}</td>
+<td>${h['3_parts_average'] || ''}</td>
+<td>${h.avg_e1_last3 || ''}</td>
+<td>${h.avg_e2_last3 || ''}</td>
+<td>${h.avg_late_last3 || ''}</td>
 `;
 
 body.appendChild(tr);
 
-/* highlight row when wager selected */
+/* highlight entire row when any wager is selected */
 
 const boxes = tr.querySelectorAll(".wager");
 
@@ -156,9 +164,9 @@ b.addEventListener("change", ()=>{
 const anyChecked=[...boxes].some(x=>x.checked);
 
 if(anyChecked){
-tr.style.background="#fff3b0";
+tr.classList.add("selected");
 }else{
-tr.style.background="";
+tr.classList.remove("selected");
 }
 });
 });
@@ -166,9 +174,11 @@ tr.style.background="";
 });
 
 }
+
+loadSheet();
+
+</script>
 
 </body>
 </html>
-
-
 
