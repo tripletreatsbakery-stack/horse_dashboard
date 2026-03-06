@@ -1,95 +1,271 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Wager Dashboard</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<title>Horse Wager Dashboard</title>
+
+<style>
+
+body{
+font-family: Arial;
+margin:20px;
+background:#f5f5f5;
+}
+
+select{
+margin-bottom:15px;
+padding:6px;
+}
+
+table{
+border-collapse:collapse;
+width:100%;
+background:white;
+}
+
+th,td{
+padding:8px;
+border-bottom:1px solid #ddd;
+text-align:left;
+}
+
+th{
+background:#eee;
+cursor:pointer;
+}
+
+.selected{
+background:#c8f7c5;
+}
+
+</style>
+
 </head>
+
 <body>
-    <h1>Wager Dashboard</h1>
-    <select id="race-selector">
-        <option value="">Select a race</option>
-        <!-- Race options will be loaded here from Google Sheets -->
-    </select>
-    <table id="horse-data-table">
-        <thead>
-            <tr>
-                <th>Horse Name</th>
-                <th>Odds</th>
-                <th>Wager (Win)</th>
-                <th>Wager (Place)</th>
-                <th>Wager (Show)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Horse data will be populated here -->
-        </tbody>
-    </table>
-    <script>
-        // Load horse data from Google Sheets CSV
-        function loadHorseData() {
-            $.get('https://docs.google.com/spreadsheets/d/e/{YOUR_SHEET_ID}/pub?output=csv', function(data) {
-                const rows = data.split('\n');
-                rows.forEach((row, index) => {
-                    if (index !== 0) { // Skip header row
-                        const columns = row.split(',');
-                        const horseName = columns[0];
-                        const odds = columns[1];
-                        $('#horse-data-table tbody').append(`<tr>
-                            <td>${horseName}</td>
-                            <td>${odds}</td>
-                            <td><input type='checkbox' class='wager' data-type='win'></td>
-                            <td><input type='checkbox' class='wager' data-type='place'></td>
-                            <td><input type='checkbox' class='wager' data-type='show'></td>
-                        </tr>`);
-                    }
-                });
-            });
-        }
 
-        $(document).ready(function() {
-            loadHorseData();
+<h2>Wager Dashboard</h2>
 
-            // Highlight selected rows
-            $(document).on('change', '.wager', function() {
-                const row = $(this).closest('tr');
-                if ($(this).is(':checked')) {
-                    row.addClass('highlighted');
-                } else {
-                    row.removeClass('highlighted');
-                }
-            });
+<select id="raceSelector"></select>
 
-            // Save wagers to Google Sheets
-            $('#save-wagers').click(function() {
-                const wagers = [];
-                $('#horse-data-table tbody tr').each(function() {
-                    const horseName = $(this).find('td:first').text();
-                    const winChecked = $(this).find('input[data-type="win"]').is(':checked');
-                    const placeChecked = $(this).find('input[data-type="place"]').is(':checked');
-                    const showChecked = $(this).find('input[data-type="show"]').is(':checked');
-                    if (winChecked || placeChecked || showChecked) {
-                        wagers.push({ horseName, win: winChecked, place: placeChecked, show: showChecked });
-                    }
-                });
-                $.ajax({
-                    url: 'https://script.google.com/macros/s/AKfycbzAqAH69rI7JqyvmFlkmpjixQRO4h9xht8kzgmAWyHNm33UA9Y4CadJ6qEf77sKp2Co/exec',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(wagers),
-                    success: function(response) {
-                        alert('Wagers saved successfully!');
-                    },
-                    error: function(error) {
-                        alert('Error saving wagers!');
-                    }
-                });
-            });
-        });
-    </script>
-    <style>
-        .highlighted {
-            background-color: yellow;
-        }
-    </style>
+<table id="table">
+
+<thead>
+<tr id="header"></tr>
+</thead>
+
+<tbody id="body"></tbody>
+
+</table>
+
+<script>
+
+const sheetURL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQFTzUi9G0XRrPHJNSAoN7y6Ik5rQe21n9QUjjU-xkBxJw1IGJJ7nIGUnSTLPJnkbUrQ2jZVGLHGfWo/pub?output=csv";
+
+const saveURL =
+"https://script.google.com/macros/s/AKfycbzAqAH69rI7JqyvmFlkmpjixQRO4h9xht8kzgmAWyHNm33UA9Y4CadJ6qEf77sKp2Co/exec";
+
+let data=[];
+let headers=[];
+let currentRace="";
+let sortColumn=null;
+let sortAsc=true;
+
+async function loadSheet(){
+
+const res=await fetch(sheetURL);
+const text=await res.text();
+
+const rows=text.trim().split("\n");
+
+headers=rows[0].split(",");
+
+rows.slice(1).forEach(r=>{
+
+const cols=r.split(",");
+let obj={};
+
+headers.forEach((h,i)=>{
+obj[h]=cols[i];
+});
+
+data.push(obj);
+
+});
+
+populateRaceSelector();
+buildHeader();
+
+}
+
+function populateRaceSelector(){
+
+const races=[...new Set(data.map(d=>d.race_id))].sort();
+
+const sel=document.getElementById("raceSelector");
+
+races.forEach(r=>{
+
+const opt=document.createElement("option");
+opt.value=r;
+opt.text=r;
+
+sel.appendChild(opt);
+
+});
+
+sel.addEventListener("change",()=>{
+currentRace=sel.value;
+renderTable();
+});
+
+currentRace=races[0];
+sel.value=currentRace;
+
+renderTable();
+
+}
+
+function buildHeader(){
+
+const head=document.getElementById("header");
+
+head.innerHTML="";
+
+head.innerHTML+=`<th>W</th><th>P</th><th>S</th>`;
+
+headers.forEach(h=>{
+
+if(h==="race_id") return;
+
+const th=document.createElement("th");
+
+th.innerText=h;
+
+th.addEventListener("click",()=>{
+sortColumn=h;
+sortAsc=!sortAsc;
+renderTable();
+});
+
+head.appendChild(th);
+
+});
+
+}
+
+function renderTable(){
+
+let filtered=data.filter(d=>d.race_id===currentRace);
+
+if(sortColumn){
+
+filtered.sort((a,b)=>{
+
+let x=a[sortColumn];
+let y=b[sortColumn];
+
+let nx=parseFloat(x);
+let ny=parseFloat(y);
+
+if(!isNaN(nx)&&!isNaN(ny)){
+return sortAsc ? nx-ny : ny-nx;
+}
+
+return sortAsc ? x.localeCompare(y) : y.localeCompare(x);
+
+});
+
+}
+
+const body=document.getElementById("body");
+
+body.innerHTML="";
+
+filtered.forEach(row=>{
+
+let tr=document.createElement("tr");
+
+let wagerCells="";
+
+["win","place","show"].forEach(type=>{
+
+wagerCells+=`
+<td>
+<input type="checkbox"
+data-type="${type}"
+data-race="${row.race_id}"
+data-program="${row.program_number}"
+data-horse="${row.horse_name}">
+</td>
+`;
+
+});
+
+tr.innerHTML=wagerCells;
+
+headers.forEach(h=>{
+
+if(h==="race_id") return;
+
+tr.innerHTML+=`<td>${row[h] || ""}</td>`;
+
+});
+
+body.appendChild(tr);
+
+});
+
+attachListeners();
+
+}
+
+function attachListeners(){
+
+document.querySelectorAll("input[type=checkbox]").forEach(box=>{
+
+box.addEventListener("change",async function(){
+
+const tr=this.closest("tr");
+
+const rowBoxes=tr.querySelectorAll("input");
+
+const win=rowBoxes[0].checked;
+const place=rowBoxes[1].checked;
+const show=rowBoxes[2].checked;
+
+if(win||place||show){
+tr.classList.add("selected");
+}else{
+tr.classList.remove("selected");
+}
+
+const payload={
+race_id:this.dataset.race,
+program_number:this.dataset.program,
+horse_name:this.dataset.horse,
+win,
+place,
+show
+};
+
+await fetch(saveURL,{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify(payload)
+});
+
+});
+
+});
+
+}
+
+loadSheet();
+
+</script>
+
 </body>
 </html>
