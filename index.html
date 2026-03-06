@@ -126,41 +126,49 @@ const tr=document.createElement("tr");
 
 tr.innerHTML=`
 
-<td>${h.program_number}</td>
-<td>${h.horse_name}</td>
-<td>${h.morning_line}</td>
-
 <td class="wager-group">
 
-<label>
-<input type="radio" name="${h.race_id}_${h.program_number}" value="win">
-Win
-</label>
+<label><input type="checkbox" class="wager"> W</label>
+<label><input type="checkbox" class="wager"> P</label>
+<label><input type="checkbox" class="wager"> S</label>
 
-<label>
-<input type="radio" name="${h.race_id}_${h.program_number}" value="place">
-Place
-</label>
-
-<label>
-<input type="radio" name="${h.race_id}_${h.program_number}" value="show">
-Show
-</label>
-
-</td>
+</td><tr>
+<th>Wager</th>
+<th>Program</th>
+<th>Horse</th>
+<th>Morning Line</th>
+<th>Jockey %</th>
+<th>Speed</th>
+<th>E1</th>
+<th>E2</th>
+<th>Late</th>
+</tr>
 `;
 
 body.appendChild(tr);
+
+/* highlight row when wager selected */
+
+const boxes = tr.querySelectorAll(".wager");
+
+boxes.forEach(b=>{
+b.addEventListener("change", ()=>{
+const anyChecked=[...boxes].some(x=>x.checked);
+
+if(anyChecked){
+tr.style.background="#fff3b0";
+}else{
+tr.style.background="";
+}
+});
+});
 
 });
 
 }
 
-loadSheet();
-
-</script>
-
 </body>
 </html>
+
 
 
