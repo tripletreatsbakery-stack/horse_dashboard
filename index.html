@@ -1,78 +1,95 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wager Dashboard</title>
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script>
-        // Google Sheet Integration
-        const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzAqAH69rI7JqyvmFlkmpjixQRO4h9xht8kzgmAWyHNm33UA9Y4CadJ6qEf77sKp2Co/exec';
-        
-        function loadSheetData() {
-            // Load data from the Google Sheet here
-            // Parse CSV and transform it into a table
-        }
-    
-        function saveWagers() {
-            // Function to save wagers to Google Sheet
-            const dataToSend = {/* Collect the data to send */};
-            fetch(SHEET_URL, {
-                method: 'POST',
-                body: JSON.stringify(dataToSend),
-                headers: {'Content-Type': 'application/json'}
-            });
-        }
-
-        function highlightRow(row) {
-            // Highlight selected wager rows logic here
-        }
-    </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
-<body onload="loadSheetData()">
+<body>
     <h1>Wager Dashboard</h1>
     <select id="race-selector">
-        <option value="">Select Race</option>
-        <!-- Populate with race options -->
+        <option value="">Select a race</option>
+        <!-- Race options will be loaded here from Google Sheets -->
     </select>
-    <table id="horse-data">
+    <table id="horse-data-table">
         <thead>
             <tr>
-                <th>Race Number</th>
-                <th>Program Number</th>
                 <th>Horse Name</th>
-                <th>Morning Line</th>
-                <th>Jockey Win %</th>
-                <th>Avg Speed Last 3</th>
-                <th>3 Parts Average</th>
-                <th>Avg E1 Last 3</th>
-                <th>Avg E2 Last 3</th>
-                <th>Avg Late Last 3</th>
-                <th>Wager</th>
+                <th>Odds</th>
+                <th>Wager (Win)</th>
+                <th>Wager (Place)</th>
+                <th>Wager (Show)</th>
             </tr>
         </thead>
         <tbody>
-            <!-- Populate with horse data rows -->
-            <tr onclick="highlightRow(this)">
-                <td>Race 1</td>
-                <td>1</td>
-                <td>Horse A</td>
-                <td>5/2</td>
-                <td>20%</td>
-                <td>89</td>
-                <td>85</td>
-                <td>80</td>
-                <td>83</td>
-                <td>82</td>
-                <td>
-                    <input type="checkbox" name="wager" value="win">Win
-                    <input type="checkbox" name="wager" value="place">Place
-                    <input type="checkbox" name="wager" value="show">Show
-                </td>
-            </tr>
-            <!-- Additional horse rows go here -->
+            <!-- Horse data will be populated here -->
         </tbody>
     </table>
-    <button onclick="saveWagers()">Save Wagers</button>
+    <script>
+        // Load horse data from Google Sheets CSV
+        function loadHorseData() {
+            $.get('https://docs.google.com/spreadsheets/d/e/{YOUR_SHEET_ID}/pub?output=csv', function(data) {
+                const rows = data.split('\n');
+                rows.forEach((row, index) => {
+                    if (index !== 0) { // Skip header row
+                        const columns = row.split(',');
+                        const horseName = columns[0];
+                        const odds = columns[1];
+                        $('#horse-data-table tbody').append(`<tr>
+                            <td>${horseName}</td>
+                            <td>${odds}</td>
+                            <td><input type='checkbox' class='wager' data-type='win'></td>
+                            <td><input type='checkbox' class='wager' data-type='place'></td>
+                            <td><input type='checkbox' class='wager' data-type='show'></td>
+                        </tr>`);
+                    }
+                });
+            });
+        }
+
+        $(document).ready(function() {
+            loadHorseData();
+
+            // Highlight selected rows
+            $(document).on('change', '.wager', function() {
+                const row = $(this).closest('tr');
+                if ($(this).is(':checked')) {
+                    row.addClass('highlighted');
+                } else {
+                    row.removeClass('highlighted');
+                }
+            });
+
+            // Save wagers to Google Sheets
+            $('#save-wagers').click(function() {
+                const wagers = [];
+                $('#horse-data-table tbody tr').each(function() {
+                    const horseName = $(this).find('td:first').text();
+                    const winChecked = $(this).find('input[data-type="win"]').is(':checked');
+                    const placeChecked = $(this).find('input[data-type="place"]').is(':checked');
+                    const showChecked = $(this).find('input[data-type="show"]').is(':checked');
+                    if (winChecked || placeChecked || showChecked) {
+                        wagers.push({ horseName, win: winChecked, place: placeChecked, show: showChecked });
+                    }
+                });
+                $.ajax({
+                    url: 'https://script.google.com/macros/s/AKfycbzAqAH69rI7JqyvmFlkmpjixQRO4h9xht8kzgmAWyHNm33UA9Y4CadJ6qEf77sKp2Co/exec',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(wagers),
+                    success: function(response) {
+                        alert('Wagers saved successfully!');
+                    },
+                    error: function(error) {
+                        alert('Error saving wagers!');
+                    }
+                });
+            });
+        });
+    </script>
+    <style>
+        .highlighted {
+            background-color: yellow;
+        }
+    </style>
 </body>
 </html>
