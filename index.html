@@ -197,20 +197,33 @@ sel.value=currentRace;
 renderTable();
 
 }
-
 function buildHeader(){
 
 const head=document.getElementById("header");
 
 head.innerHTML="<th>W</th><th>P</th><th>S</th>";
 
+const headerMap = {
+
+prime_bucket:"Class",
+program_number:"#",
+horse_name:"Horse",
+morning_line:"Odds",
+avg_speed_last3:"Speed",
+avg_e1_last3:"E1",
+avg_e2_last3:"E2",
+avg_late_last3:"Late",
+avg_pace_score:"Pace"
+
+};
+
 headers.forEach(h=>{
 
-if(h==="race_number") return;
+if(h==="race_number" || h==="race_id") return;
 
 const th=document.createElement("th");
 
-th.innerText=h;
+th.innerText = headerMap[h] || h;
 
 head.appendChild(th);
 
