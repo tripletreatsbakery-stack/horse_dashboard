@@ -251,15 +251,17 @@ renderTicket();
 
 try{
 
+const formData = new FormData();
+
+formData.append("race_id",payload.race_id);
+formData.append("program_number",payload.program_number);
+formData.append("horse_name",payload.horse_name);
+formData.append("wager",payload.wager);
+
 const res=await fetch(saveURL,{
 
 method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify(payload)
+body:formData
 
 });
 
