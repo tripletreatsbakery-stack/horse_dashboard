@@ -17,8 +17,6 @@ background-position:center;
 color:white;
 }
 
-/* Add dark overlay so text stays readable */
-
 body::before{
 content:"";
 position:fixed;
@@ -30,7 +28,7 @@ background:rgba(0,40,0,0.65);
 z-index:0;
 }
 
-body > * {
+body > *{
 position:relative;
 z-index:1;
 }
@@ -38,6 +36,45 @@ z-index:1;
 h2{
 margin-bottom:10px;
 color:#FFD700;
+}
+
+/* BALANCE CARDS */
+
+.balance-container{
+display:flex;
+gap:15px;
+margin-bottom:20px;
+}
+
+.balance-card{
+flex:1;
+background:rgba(255,255,255,0.95);
+padding:14px;
+border-radius:8px;
+text-align:center;
+box-shadow:0 2px 8px rgba(0,0,0,0.2);
+color:black;
+}
+
+.balance-label{
+font-size:12px;
+letter-spacing:1px;
+color:#666;
+text-transform:uppercase;
+}
+
+.balance-value{
+font-size:26px;
+font-weight:bold;
+margin-top:4px;
+}
+
+.positive{
+color:#0a8f2a;
+}
+
+.negative{
+color:#c0392b;
 }
 
 /* Dropdown */
@@ -77,14 +114,10 @@ tr:hover{
 background:#eef6ff;
 }
 
-/* Selected horse */
-
 .selected{
 background:#c8f7c5 !important;
 font-weight:bold;
 }
-
-/* Ticket */
 
 .ticket{
 margin-top:20px;
@@ -104,22 +137,28 @@ margin-top:0;
 
 <body>
 <div style="max-width:1200px;margin:auto">
+
 <h2>Ampa's Wagers</h2>
 
-  <div id="balanceBox" style="
-background:rgba(255,255,255,0.95);
-color:black;
-padding:12px;
-border-left:6px solid gold;
-border-radius:6px;
-margin-bottom:15px;
-font-weight:bold;
-font-size:18px;
-">
-Ampa's Balance: Loading...
+<div class="balance-container">
+
+<div class="balance-card">
+<div class="balance-label">Balance</div>
+<div id="balanceValue" class="balance-value">$0</div>
 </div>
 
-  
+<div class="balance-card">
+<div class="balance-label">Deposit</div>
+<div id="depositValue" class="balance-value">$0</div>
+</div>
+
+<div class="balance-card">
+<div class="balance-label">Net</div>
+<div id="netValue" class="balance-value">$0</div>
+</div>
+
+</div>
+
 <select id="raceSelector"></select>
 
 <table id="table">
@@ -135,26 +174,59 @@ Ampa's Balance: Loading...
 <div class="ticket">
 
 <h3>Bet Ticket</h3>
-
 <div id="ticket"></div>
 
 </div>
 
 <script>
 
- const balanceURL =
+const balanceURL =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFTzUi9G0XRrPHJNSAoN7y6Ik5rQe21n9QUjjU-xkBxJw1IGJJ7nIGUnSTLPJnkbUrQ2jZVGLHGfWo/pub?gid=947430458&single=true&output=csv";
-  
+
 const sheetURL =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFTzUi9G0XRrPHJNSAoN7y6Ik5rQe21n9QUjjU-xkBxJw1IGJJ7nIGUnSTLPJnkbUrQ2jZVGLHGfWo/pub?output=csv";
 
 const saveURL =
 "https://script.google.com/macros/s/AKfycbzNV1ga5VDm5iRGjwC4PrSoU9uPBmlvRhzAm8G3xIuFbhQIKSnlcsN57sepmw49mALC/exec";
-  
+
 let data=[];
 let headers=[];
 let currentRace="";
 let ticket=[];
+
+/* LOAD BALANCE */
+
+async function loadBalance(){
+
+const res = await fetch(balanceURL);
+const text = await res.text();
+
+const rows = text.trim().split("\n");
+const cols = rows[1].split(",");
+
+const deposit = parseFloat(cols[0].replace("$",""));
+const net = parseFloat(cols[1].replace("$",""));
+const balance = parseFloat(cols[2].replace("$",""));
+
+document.getElementById("balanceValue").innerText="$"+balance;
+document.getElementById("depositValue").innerText="$"+deposit;
+document.getElementById("netValue").innerText="$"+net;
+
+if(balance>=0){
+document.getElementById("balanceValue").classList.add("positive");
+}else{
+document.getElementById("balanceValue").classList.add("negative");
+}
+
+if(net>=0){
+document.getElementById("netValue").classList.add("positive");
+}else{
+document.getElementById("netValue").classList.add("negative");
+}
+
+}
+
+/* LOAD HORSES */
 
 async function loadSheet(){
 
@@ -183,28 +255,9 @@ populateRaceSelector();
 buildHeader();
 
 }
-async function loadBalance(){
 
-const res = await fetch(balanceURL);
-const text = await res.text();
+/* RACE SELECTOR */
 
-const rows = text.trim().split("\n");
-
-const cols = rows[1].split(",");
-
-const deposit = cols[0];
-const net = cols[1];
-const balance = cols[2];
-
-let color = "green";
-if(parseFloat(balance) < 0) color = "red";
-
-document.getElementById("balanceBox").innerHTML =
-`Ampa's Balance: <span style="color:${color};font-size:20px">$${balance}</span>
-&nbsp;&nbsp; | Deposit: $${deposit}
-&nbsp;&nbsp; | Net: $${net}`;
-
-}
 function populateRaceSelector(){
 
 const races=[...new Set(data.map(d=>d.race_number))].sort();
@@ -235,14 +288,16 @@ sel.value=currentRace;
 renderTable();
 
 }
+
+/* HEADER */
+
 function buildHeader(){
 
 const head=document.getElementById("header");
 
 head.innerHTML="<th>W</th><th>P</th><th>S</th>";
 
-const headerMap = {
-
+const headerMap={
 prime_bucket:"Class",
 program_number:"#",
 horse_name:"Horse",
@@ -252,22 +307,22 @@ avg_e1_last3:"E1",
 avg_e2_last3:"E2",
 avg_late_last3:"Late",
 avg_pace_score:"Pace"
-
 };
 
 headers.forEach(h=>{
 
-if(h==="race_number" || h==="race_id") return;
+if(h==="race_number"||h==="race_id") return;
 
 const th=document.createElement("th");
-
-th.innerText = headerMap[h] || h;
+th.innerText=headerMap[h]||h;
 
 head.appendChild(th);
 
 });
 
 }
+
+/* TABLE */
 
 function renderTable(){
 
@@ -289,10 +344,10 @@ const box=document.createElement("input");
 
 box.type="checkbox";
 
-box.dataset.type = type;
-box.dataset.race = row.race_id;
-box.dataset.program = row.program_number;
-box.dataset.horse = row.horse_name;
+box.dataset.type=type;
+box.dataset.race=row.race_id;
+box.dataset.program=row.program_number;
+box.dataset.horse=row.horse_name;
 
 box.addEventListener("change",handleWager);
 
@@ -304,7 +359,7 @@ tr.appendChild(td);
 
 headers.forEach(h=>{
 
-if(h==="race_number" || h==="race_id") return;
+if(h==="race_number"||h==="race_id") return;
 
 const td=document.createElement("td");
 
@@ -320,6 +375,8 @@ body.appendChild(tr);
 
 }
 
+/* SAVE WAGER */
+
 async function handleWager(){
 
 const tr=this.closest("tr");
@@ -331,20 +388,18 @@ tr.classList.remove("selected");
 }
 
 const payload={
-
 race_id:this.dataset.race,
 program_number:this.dataset.program,
 horse_name:this.dataset.horse,
 wager:this.dataset.type,
-action:this.checked ? "add" : "delete"
-
+action:this.checked?"add":"delete"
 };
 
 updateTicket(payload);
 
 try{
 
-const formData = new FormData();
+const formData=new FormData();
 
 formData.append("race_id",payload.race_id);
 formData.append("program_number",payload.program_number);
@@ -352,14 +407,10 @@ formData.append("horse_name",payload.horse_name);
 formData.append("wager",payload.wager);
 formData.append("action",payload.action);
 
-const res=await fetch(saveURL,{
+await fetch(saveURL,{
 method:"POST",
 body:formData
 });
-
-const result=await res.text();
-
-console.log("Saved",result);
 
 }catch(err){
 
@@ -369,12 +420,12 @@ console.error("Save failed",err);
 
 }
 
+/* TICKET */
+
 function updateTicket(payload){
 
 if(payload.action==="add"){
-
 ticket.push(payload);
-
 }
 
 if(payload.action==="delete"){
@@ -413,7 +464,7 @@ div.appendChild(row);
 
 loadSheet();
 loadBalance();
-  
+
 </script>
 
 </body>
