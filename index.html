@@ -10,22 +10,50 @@
 body{
 font-family:Arial;
 margin:20px;
-background:#f5f5f5;
+background-image:url("https://images.unsplash.com/photo-1508098682722-e99c643e7f0b");
+background-size:cover;
+background-attachment:fixed;
+background-position:center;
+color:white;
+}
+
+/* Add dark overlay so text stays readable */
+
+body::before{
+content:"";
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,40,0,0.65);
+z-index:-1;
 }
 
 h2{
 margin-bottom:10px;
+color:#FFD700;
 }
+
+/* Dropdown */
 
 select{
 padding:6px;
 margin-bottom:15px;
+background:#0b3d0b;
+color:white;
+border:1px solid #FFD700;
 }
+
+/* Table */
 
 table{
 border-collapse:collapse;
 width:100%;
-background:white;
+background:rgba(255,255,255,0.95);
+color:black;
+border-radius:6px;
+overflow:hidden;
 }
 
 th,td{
@@ -35,7 +63,8 @@ text-align:left;
 }
 
 th{
-background:#eee;
+background:#0b3d0b;
+color:#FFD700;
 cursor:pointer;
 }
 
@@ -43,20 +72,29 @@ tr:hover{
 background:#eef6ff;
 }
 
+/* Selected horse */
+
 .selected{
-background:#c8f7c5;
+background:#c8f7c5 !important;
 font-weight:bold;
 }
 
+/* Ticket */
+
 .ticket{
 margin-top:20px;
-padding:10px;
-background:white;
-border:1px solid #ddd;
+padding:12px;
+background:rgba(255,255,255,0.95);
+color:black;
+border-radius:6px;
+border-left:6px solid #FFD700;
+}
+
+.ticket h3{
+margin-top:0;
 }
 
 </style>
-
 </head>
 
 <body>
