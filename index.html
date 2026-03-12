@@ -89,7 +89,7 @@ const sheetURL =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFTzUi9G0XRrPHJNSAoN7y6Ik5rQe21n9QUjjU-xkBxJw1IGJJ7nIGUnSTLPJnkbUrQ2jZVGLHGfWo/pub?output=csv";
 
 const saveURL =
-"https://script.google.com/macros/s/AKfycbzH5y5OxVrQjrxvtUNcnuvTQMDdXrq0iTb2CsCz1B0hhEYC19IHPr91HVIJNKAGpV_a/exec"; 
+"https://script.google.com/macros/s/AKfycbxnBpPgmT4yjVW_WlKvUhwmUjWzpoHzi3VezgkEhctiXDynNadbtfmq0IFUcbOLjA/exec";
 
 let data=[];
 let headers=[];
@@ -195,10 +195,10 @@ const box=document.createElement("input");
 
 box.type="checkbox";
 
-box.dataset.type=type;
-box.dataset.race=row.race_number;
-box.dataset.program=row.program_number;
-box.dataset.horse=row.horse_name;
+box.dataset.type = type;
+box.dataset.race = row.race_id;
+box.dataset.program = row.program_number;
+box.dataset.horse = row.horse_name;
 
 box.addEventListener("change",handleWager);
 
@@ -241,13 +241,12 @@ const payload={
 race_id:this.dataset.race,
 program_number:this.dataset.program,
 horse_name:this.dataset.horse,
-wager:this.dataset.type
+wager:this.dataset.type,
+action:this.checked ? "add" : "delete"
 
 };
 
-ticket.push(payload);
-
-renderTicket();
+updateTicket(payload);
 
 try{
 
@@ -257,12 +256,11 @@ formData.append("race_id",payload.race_id);
 formData.append("program_number",payload.program_number);
 formData.append("horse_name",payload.horse_name);
 formData.append("wager",payload.wager);
+formData.append("action",payload.action);
 
 const res=await fetch(saveURL,{
-
 method:"POST",
 body:formData
-
 });
 
 const result=await res.text();
@@ -274,6 +272,30 @@ console.log("Saved",result);
 console.error("Save failed",err);
 
 }
+
+}
+
+function updateTicket(payload){
+
+if(payload.action==="add"){
+
+ticket.push(payload);
+
+}
+
+if(payload.action==="delete"){
+
+ticket=ticket.filter(t=>
+
+!(t.race_id===payload.race_id &&
+t.program_number===payload.program_number &&
+t.wager===payload.wager)
+
+);
+
+}
+
+renderTicket();
 
 }
 
