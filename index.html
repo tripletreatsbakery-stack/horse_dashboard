@@ -106,6 +106,20 @@ margin-top:0;
 <div style="max-width:1200px;margin:auto">
 <h2>Ampa's Wagers</h2>
 
+  <div id="balanceBox" style="
+background:rgba(255,255,255,0.95);
+color:black;
+padding:12px;
+border-left:6px solid gold;
+border-radius:6px;
+margin-bottom:15px;
+font-weight:bold;
+font-size:18px;
+">
+Ampa's Balance: Loading...
+</div>
+
+  
 <select id="raceSelector"></select>
 
 <table id="table">
@@ -127,7 +141,9 @@ margin-top:0;
 </div>
 
 <script>
-
+const balanceURL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQFTzUi9G0XRrPHJNSAoN7y6Ik5rQe21n9QUjjU-xkBxJw1IGJJ7nIGUnSTLPJnkbUrQ2jZVGLHGfWo/pub?output=csv";
+  
 const sheetURL =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFTzUi9G0XRrPHJNSAoN7y6Ik5rQe21n9QUjjU-xkBxJw1IGJJ7nIGUnSTLPJnkbUrQ2jZVGLHGfWo/pub?output=csv";
 
@@ -166,7 +182,28 @@ populateRaceSelector();
 buildHeader();
 
 }
+async function loadBalance(){
 
+const res = await fetch(balanceURL);
+const text = await res.text();
+
+const rows = text.trim().split("\n");
+
+const cols = rows[1].split(",");
+
+const deposit = cols[0];
+const net = cols[1];
+const balance = cols[2];
+
+let color = "green";
+if(parseFloat(balance) < 0) color = "red";
+
+document.getElementById("balanceBox").innerHTML =
+`Ampa's Balance: <span style="color:${color};font-size:20px">$${balance}</span>
+&nbsp;&nbsp; | Deposit: $${deposit}
+&nbsp;&nbsp; | Net: $${net}`;
+
+}
 function populateRaceSelector(){
 
 const races=[...new Set(data.map(d=>d.race_number))].sort();
@@ -374,7 +411,8 @@ div.appendChild(row);
 }
 
 loadSheet();
-
+loadBalance();
+  
 </script>
 
 </body>
